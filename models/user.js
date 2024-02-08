@@ -29,23 +29,25 @@ const userSchema = new mongoose.Schema({
     type: String,
     // required:true
   },
+  verify: {
+    type: Boolean,
+    default: false
+  },
   photo: {
     type: String,
-    // required:true
+  //   default:
+  //     "https://res.cloudinary.com/booktrade/image/upload/v1694354727/default-avatar-profile-icon-vector-social-media-user-photo-700-205577532_yzne6o.jpg",
   },
-  //   answers: {
-  //     type: Array,
-  //   },
   answers: {
     type: [
       {
         questionNumber: {
           type: String,
-        //   required: true,
+          //   required: true,
         },
         selectedOption: {
           type: String,
-        //   required: true,
+          //   required: true,
         },
       },
     ],

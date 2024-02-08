@@ -155,16 +155,65 @@ router.post("/answers", requireLogin, (req, res) => {
 });
 
 router.get("/isanswers", requireLogin, (req, res) => {
-  const hasAnswers = req.user && req.user.answers ? true : false;
+  const hasAnswers = req.user && req.user.answers && req.user.answers.length > 0 ? true : false;
   res.json(hasAnswers);
 });
 
 router.get("/getanswers", requireLogin, (req, res) => {
   const userId = req.user._id;
-  console.log(userId);
+  // console.log(userId);
 
   USER.findById(userId)
     .select("answers")
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    });
+});
+
+router.put("/uploadprofilepic", requireLogin, (req, res) => {
+  const userId = req.user._id;
+  const { photo } = req.body;
+
+  if (!photo) {
+    return res.status(422).json({ error: "Invalid data" });
+  }
+
+  USER.findById(userId)
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      user.photo = photo;
+
+      return user.save();
+    })
+
+    .then(() => {
+      res.json({ message: "Answers saved successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
+  // .catch((err) => {
+  //   console.log(err);
+  //   res.status(500).json({ error: "Internal Server Error" });
+  // });
+});
+
+router.get("/profile", requireLogin, (req, res) => {
+  const userId = req.user._id;
+
+  USER.findById(userId)
+    .select("name branch year about verify photo")
     .then((user) => {
       if (!user) {
         return res.status(404).json({ error: "User not found" });
