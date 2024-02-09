@@ -155,7 +155,8 @@ router.post("/answers", requireLogin, (req, res) => {
 });
 
 router.get("/isanswers", requireLogin, (req, res) => {
-  const hasAnswers = req.user && req.user.answers && req.user.answers.length > 0 ? true : false;
+  const hasAnswers =
+    req.user && req.user.answers && req.user.answers.length > 0 ? true : false;
   res.json(hasAnswers);
 });
 
@@ -225,5 +226,60 @@ router.get("/profile", requireLogin, (req, res) => {
       return res.status(500).json({ error: "Internal server error" });
     });
 });
+
+router.put("/editprofile", requireLogin, (req, res) => {
+  const userId = req.user;
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(422).json({ error: "Invalid data" });
+  }
+
+  USER.findById(userId)
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      user.name = name;
+
+      return user.save();
+    })
+    .then(() => {
+      res.json({ message: "Answers saved successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
+});
+
+router.put("/about", requireLogin, (req, res) => {
+  const userId = req.user._id;
+  const { about } = req.body;
+
+  if (!about) {
+    // return res.status(422).json({ error: "Invalid data" });
+  }
+
+  USER.findById(userId)
+  .then((user) => {
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    user.about = about
+
+    return user.save();
+  })
+  .then(() => {
+    res.json({ message: "Answers saved successfully" });
+  })
+  .catch((err) => {
+    console.log(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  });
+
+})
+
 
 module.exports = router;
