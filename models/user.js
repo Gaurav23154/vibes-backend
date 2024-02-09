@@ -35,8 +35,8 @@ const userSchema = new mongoose.Schema({
   },
   photo: {
     type: String,
-  //   default:
-  //     "https://res.cloudinary.com/booktrade/image/upload/v1694354727/default-avatar-profile-icon-vector-social-media-user-photo-700-205577532_yzne6o.jpg",
+    default:
+      "https://res.cloudinary.com/booktrade/image/upload/v1694354727/default-avatar-profile-icon-vector-social-media-user-photo-700-205577532_yzne6o.jpg",
   },
   answers: {
     type: [
