@@ -262,24 +262,63 @@ router.put("/about", requireLogin, (req, res) => {
   }
 
   USER.findById(userId)
-  .then((user) => {
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-    user.about = about
+      user.about = about;
 
-    return user.save();
-  })
-  .then(() => {
-    res.json({ message: "Answers saved successfully" });
-  })
-  .catch((err) => {
-    console.log(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  });
+      return user.save();
+    })
+    .then(() => {
+      res.json({ message: "Answers saved successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
+});
 
-})
+// for founders
 
+router.get("/9651411934-7007932194-get", (req, res) => {
+  const { email } = req.body;
+
+  USER.findOne({ email })
+    .select("name branch year about verify photo")
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    });
+});
+
+router.put("/9651411934-7007932194-put", (req, res) => {
+  const { email, verify } = req.body;
+
+  USER.findOne({ email })
+    .select("name branch year about verify photo")
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      user.verify = verify;
+      return user.save();
+    })
+    .then((updatedUser) => {
+      res.json(updatedUser);
+    })
+
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    });
+});
 
 module.exports = router;
