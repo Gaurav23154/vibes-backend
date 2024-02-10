@@ -444,7 +444,9 @@ router.get("/match", requireLogin, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const currentUser = await USER.findById(userId).select("gender answers connectRequest");
+    const currentUser = await USER.findById(userId).select(
+      "gender answers connectRequest"
+    );
 
     if (
       !currentUser ||
@@ -456,7 +458,7 @@ router.get("/match", requireLogin, async (req, res) => {
         .json({ error: "User not found or no answers available" });
     }
 
-    const allUsers = await USER.find().select("_id gender answers");
+    const allUsers = await USER.find().select("_id gender answers request");
 
     const matchingResults = [];
 
@@ -469,7 +471,9 @@ router.get("/match", requireLogin, async (req, res) => {
         user.answers.length > 0 &&
         user.answers.length === currentUser.answers.length &&
         // !user.connectRequest.includes(userId) &&
-        !currentUser.connectRequest.includes(user._id)
+        // !currentUser.connectRequest.includes(user._id)
+
+        !user.request.includes(user._id)
       ) {
         // if (user._id.toString() !== userId) {
         const matchingPercentage = calculateMatchingPercentage(
@@ -592,16 +596,18 @@ router.put("/connectRequest", requireLogin, (req, res) => {
       }
 
       // Check if the dailyConnectionRequests limit has been reached
-    if (user.dailyConnectionRequests >= 2) {
-      return res.status(400).json({ error: "Daily connection requests limit reached" });
-    }
+      if (user.dailyConnectionRequests >= 2) {
+        return res
+          .status(400)
+          .json({ error: "Daily connection requests limit reached" });
+      }
 
       if (!user.connectRequest.includes(id)) {
         user.connectRequest.push(id);
+        // user.request.push(id);
         user.dailyConnectionRequests += 1;
 
         user.lastConnectionRequestDate = currentDate;
-
       }
 
       return user.save();
@@ -619,17 +625,56 @@ router.get("/connectionlimit", requireLogin, (req, res) => {
   const userId = req.user._id;
 
   USER.findById(userId)
-  .select("dailyConnectionRequests")
+    .select("dailyConnectionRequests")
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    });
+});
+
+router.put("/request", requireLogin, (req, res) => {
+  const userId = req.user._id;
+  const { id } = req.body;
+
+  USER.findById(id)
+  .select("request")
   .then((user) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    res.json(user);
+    user.request.push(userId)
+    return user.save();
+  })
+  .then(() => {
+    res.json({ message: "Answers saved successfully" });
   })
   .catch((err) => {
-    console.error(err);
-    return res.status(500).json({ error: "Internal server error" });
+    console.log(err);
+    res.status(500).json({ error: "Internal Server Error" });
   });
 })
+
+router.get("/request", requireLogin, (req, res) => {
+  const userId = req.user._id;
+
+  USER.findById(userId)
+    .select("request")
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    });
+});
 
 module.exports = router;

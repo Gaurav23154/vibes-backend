@@ -65,6 +65,15 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  request: {
+    type: [ObjectId],
+    default: [], // Default to an empty array
+  },
+  friend: {
+    type: [ObjectId],
+    default: [], // Default to an empty array
+  }
+
 });
 
 mongoose.model("USER", userSchema);
