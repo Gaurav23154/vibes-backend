@@ -321,4 +321,315 @@ router.put("/9651411934-7007932194-put", (req, res) => {
     });
 });
 
+// matching algotithm
+function calculateMatchingPercentage(array1, array2) {
+  // Ensure both arrays have the same length
+  if (array1.length !== array2.length) {
+    console.log("Array lengths:", array1.length, array2.length);
+
+    throw new Error("Arrays must have the same length");
+  }
+
+  // Count the number of matching elements
+  let matchingCount = 0;
+
+  // Iterate through each element and compare
+  for (let i = 0; i < array1.length; i++) {
+    const answer1 = array1[i];
+    const answer2 = array2[i];
+
+    // Compare questionNumber and selectedOption
+    if (
+      answer1.questionNumber === answer2.questionNumber &&
+      answer1.selectedOption === answer2.selectedOption
+    ) {
+      matchingCount++;
+    }
+  }
+
+  // Calculate the percentage of matching elements
+  const percentage = (matchingCount / array1.length) * 100;
+
+  return percentage;
+}
+
+//first working modal
+// router.get("/match", requireLogin, (req, res) => {
+//   try{
+//   const userId = req.user._id
+
+//   const currentUser = await USER.findById(userId).select("answers");
+
+//   if(!currentUser) {
+//     return res.status(404).json({ error: "User not found" });
+//   }
+
+//   const allUsers = await USER.find().select("_id answers");
+
+//   let mostSimilarUser = null;
+//   let highestMatchingPercentage = 0;
+
+//   for (const user of allUsers) {
+//     if (user._id.toString() !== userId) {
+//       const matchingPercentage = calculateMatchingPercentage(currentUser.answers, user.answers);
+
+//       if (matchingPercentage > highestMatchingPercentage) {
+//         highestMatchingPercentage = matchingPercentage;
+//         mostSimilarUser = user;
+//       }
+//     }
+//   }
+
+//   if (mostSimilarUser) {
+//     return res.json({
+//       mostSimilarUserId: mostSimilarUser._id,
+//       matchingPercentage: highestMatchingPercentage,
+//     });
+//   } else {
+//     return res.json({ message: "No similar user found" });
+//   }
+// }
+//  catch (error) {
+//   console.error(error);
+//   return res.status(500).json({ error: "Internal server error" });
+// }
+// })
+
+// first working prototype
+
+// router.get("/match", requireLogin, async (req, res) => {
+//   try {
+//     const userId = req.user._id;
+
+//     const currentUser = await USER.findById(userId).select("gender answers");
+
+//     if (!currentUser || !currentUser.answers || currentUser.answers.length === 0) {
+//       return res.status(404).json({ error: "User not found or no answers available" });
+//     }
+
+//     const allUsers = await USER.find().select("_id gender answers");
+
+//     let mostSimilarUser = null;
+//     let highestMatchingPercentage = 0;
+
+//     for (const user of allUsers) {
+//       // if (user._id.toString() !== userId && user.answers && user.answers.length > 0 && user.answers.length === currentUser.answers.length) {
+//         if (user._id.toString() !== userId.toString() && user.gender !== currentUser.gender && user.answers && user.answers.length > 0 && user.answers.length === currentUser.answers.length) {
+
+//       // if (user._id.toString() !== userId) {
+//         const matchingPercentage = calculateMatchingPercentage(currentUser.answers, user.answers);
+
+//         if (matchingPercentage > highestMatchingPercentage) {
+//           highestMatchingPercentage = matchingPercentage;
+//           mostSimilarUser = user;
+//         }
+//       }
+//     }
+
+//     if (mostSimilarUser) {
+//       return res.json({
+//         mostSimilarUserId: mostSimilarUser._id,
+//         matchingPercentage: highestMatchingPercentage,
+//       });
+//     } else {
+//       return res.json({ message: "No similar user found" });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ error: "Internal server error" });
+//   }
+// });
+
+router.get("/match", requireLogin, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const currentUser = await USER.findById(userId).select("gender answers connectRequest");
+
+    if (
+      !currentUser ||
+      !currentUser.answers ||
+      currentUser.answers.length === 0
+    ) {
+      return res
+        .status(404)
+        .json({ error: "User not found or no answers available" });
+    }
+
+    const allUsers = await USER.find().select("_id gender answers");
+
+    const matchingResults = [];
+
+    for (const user of allUsers) {
+      // if (user._id.toString() !== userId && user.answers && user.answers.length > 0 && user.answers.length === currentUser.answers.length) {
+      if (
+        user._id.toString() !== userId.toString() &&
+        user.gender !== currentUser.gender &&
+        user.answers &&
+        user.answers.length > 0 &&
+        user.answers.length === currentUser.answers.length &&
+        // !user.connectRequest.includes(userId) &&
+        !currentUser.connectRequest.includes(user._id)
+      ) {
+        // if (user._id.toString() !== userId) {
+        const matchingPercentage = calculateMatchingPercentage(
+          currentUser.answers,
+          user.answers
+        );
+
+        matchingResults.push({
+          userId: user._id,
+          matchingPercentage: matchingPercentage,
+        });
+      }
+    }
+
+    // Sort the results in decreasing order of matching percentage
+    matchingResults.sort((a, b) => b.matchingPercentage - a.matchingPercentage);
+
+    // // Calculate the number of users to include in the top 60%
+    // const top60PercentCount = Math.ceil(0.6 * matchingResults.length);
+
+    // // Get only the top 60% of users
+    // const top60PercentUsers = matchingResults.slice(0, top60PercentCount);
+
+    // //30%
+
+    // // Calculate the number of users to include in the top 30%
+    // const top30PercentCount = Math.ceil(0.3 * matchingResults.length);
+
+    // // Get only the top 30% of users
+    // const top30PercentUsers = matchingResults.slice(0, top30PercentCount);
+
+    // //5%
+
+    // // Calculate the number of users to include in the top 30%
+    // const top5PercentCount = Math.ceil(0.05 * matchingResults.length);
+
+    // // Get only the top 30% of users
+    // const top5PercentUsers = matchingResults.slice(0, top5PercentCount);
+
+    const percentages = [0.6, 0.3, 0.05];
+
+    const topUsersByPercentage = percentages.map((percentage) => {
+      const count = Math.ceil(percentage * matchingResults.length);
+      return matchingResults.slice(0, count);
+    });
+
+    // return res.json(topUsersByPercentage);
+
+    // Keep track of selected users to avoid repetition
+    // const selectedUserIds = new Set();
+
+    // Function to get a random user from the array, excluding those in the set
+    // const getRandomUser = (userArray, exclusionSet) => {
+    //   const availableUsers = userArray.filter(user => !exclusionSet.has(user.userId));
+    //   const randomUserIndex = Math.floor(Math.random() * availableUsers.length);
+    //   const randomUser = availableUsers[randomUserIndex];
+    //   return randomUser;
+    // };
+
+    // Get a random user from the top 60% array
+    const randomUserIndex = Math.floor(
+      Math.random() * topUsersByPercentage[0].length
+    );
+    const randomUser60 = topUsersByPercentage[0][randomUserIndex];
+
+    // Get a random user from the top 60% array
+    // const randomUser60 = getRandomUser(topUsersByPercentage[0], selectedUserIds);
+
+    // Check if the randomly selected user is in the top 30% or top 5%
+    const isInTop30Percent = topUsersByPercentage[1].some(
+      (user) => user.userId === randomUser60.userId
+    );
+    const isInTop5Percent = topUsersByPercentage[2].some(
+      (user) => user.userId === randomUser60.userId
+    );
+
+    // Add the selected user to the set to avoid repetition
+    // selectedUserIds.add(randomUser60.userId);
+
+    // Get user details based on the randomly selected user's ID
+    const userDetails = await USER.findById(randomUser60.userId).select(
+      "name year branch photo _id about verify"
+    );
+
+    return res.json({
+      userDetails,
+      isInTop30Percent,
+      isInTop5Percent,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/connectRequest", requireLogin, (req, res) => {
+  const userId = req.user._id;
+  const { id } = req.body;
+
+  if (!id) {
+    return res.status(422).json({ error: "Invalid data" });
+  }
+
+  USER.findById(userId)
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const currentDate = new Date();
+      const lastRequestDate = new Date(user.lastConnectionRequestDate);
+
+      if (
+        currentDate.getDate() !== lastRequestDate.getDate() ||
+        currentDate.getMonth() !== lastRequestDate.getMonth() ||
+        currentDate.getFullYear() !== lastRequestDate.getFullYear()
+      ) {
+        // If it's a new day, reset the dailyConnectionRequests count
+        user.dailyConnectionRequests = 0;
+      }
+
+      // Check if the dailyConnectionRequests limit has been reached
+    if (user.dailyConnectionRequests >= 2) {
+      return res.status(400).json({ error: "Daily connection requests limit reached" });
+    }
+
+      if (!user.connectRequest.includes(id)) {
+        user.connectRequest.push(id);
+        user.dailyConnectionRequests += 1;
+
+        user.lastConnectionRequestDate = currentDate;
+
+      }
+
+      return user.save();
+    })
+    .then(() => {
+      res.json({ message: "Answers saved successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
+});
+
+router.get("/connectionlimit", requireLogin, (req, res) => {
+  const userId = req.user._id;
+
+  USER.findById(userId)
+  .select("dailyConnectionRequests")
+  .then((user) => {
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json(user);
+  })
+  .catch((err) => {
+    console.error(err);
+    return res.status(500).json({ error: "Internal server error" });
+  });
+})
+
 module.exports = router;

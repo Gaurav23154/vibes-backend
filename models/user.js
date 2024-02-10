@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { ObjectId } = mongoose.Schema.Types;
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -31,7 +32,7 @@ const userSchema = new mongoose.Schema({
   },
   verify: {
     type: Boolean,
-    default: false
+    default: false,
   },
   photo: {
     type: String,
@@ -51,6 +52,18 @@ const userSchema = new mongoose.Schema({
         },
       },
     ],
+  },
+  connectRequest: {
+    type: [ObjectId],
+    default: [], // Default to an empty array
+  },
+  dailyConnectionRequests: {
+    type: Number,
+    default: 0,
+  },
+  lastConnectionRequestDate: {
+    type: Date,
+    default: Date.now,
   },
 });
 
