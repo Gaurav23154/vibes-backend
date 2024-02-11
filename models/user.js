@@ -80,6 +80,9 @@ const userSchema = new mongoose.Schema({
   friend: {
     type: [ObjectId],
     default: [], // Default to an empty array
+  },
+  isOnline:{
+    type: Boolean,
   }
 
 });
