@@ -445,7 +445,7 @@ router.get("/match", requireLogin, async (req, res) => {
     const userId = req.user._id;
 
     const currentUser = await USER.findById(userId).select(
-      "gender answers connectRequest"
+      "gender answers"
     );
 
     if (
@@ -458,7 +458,7 @@ router.get("/match", requireLogin, async (req, res) => {
         .json({ error: "User not found or no answers available" });
     }
 
-    const allUsers = await USER.find().select("_id gender answers request");
+    const allUsers = await USER.find().select("_id gender answers request friend");
 
     const matchingResults = [];
 
@@ -473,7 +473,8 @@ router.get("/match", requireLogin, async (req, res) => {
         // !user.connectRequest.includes(userId) &&
         // !currentUser.connectRequest.includes(user._id)
 
-        !user.request.includes(user._id)
+        !user.request.includes(userId) &&
+        !user.friend.includes(userId)
       ) {
         // if (user._id.toString() !== userId) {
         const matchingPercentage = calculateMatchingPercentage(
@@ -565,61 +566,61 @@ router.get("/match", requireLogin, async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error here" });
   }
 });
 
-router.put("/connectRequest", requireLogin, (req, res) => {
-  const userId = req.user._id;
-  const { id } = req.body;
+// router.put("/connectRequest", requireLogin, (req, res) => {
+//   const userId = req.user._id;
+//   const { id } = req.body;
 
-  if (!id) {
-    return res.status(422).json({ error: "Invalid data" });
-  }
+//   if (!id) {
+//     return res.status(422).json({ error: "Invalid data" });
+//   }
 
-  USER.findById(userId)
-    .then((user) => {
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
+//   USER.findById(userId)
+//     .then((user) => {
+//       if (!user) {
+//         return res.status(404).json({ error: "User not found" });
+//       }
 
-      const currentDate = new Date();
-      const lastRequestDate = new Date(user.lastConnectionRequestDate);
+//       const currentDate = new Date();
+//       const lastRequestDate = new Date(user.lastConnectionRequestDate);
 
-      if (
-        currentDate.getDate() !== lastRequestDate.getDate() ||
-        currentDate.getMonth() !== lastRequestDate.getMonth() ||
-        currentDate.getFullYear() !== lastRequestDate.getFullYear()
-      ) {
-        // If it's a new day, reset the dailyConnectionRequests count
-        user.dailyConnectionRequests = 0;
-      }
+//       if (
+//         currentDate.getDate() !== lastRequestDate.getDate() ||
+//         currentDate.getMonth() !== lastRequestDate.getMonth() ||
+//         currentDate.getFullYear() !== lastRequestDate.getFullYear()
+//       ) {
+//         // If it's a new day, reset the dailyConnectionRequests count
+//         user.dailyConnectionRequests = 0;
+//       }
 
-      // Check if the dailyConnectionRequests limit has been reached
-      if (user.dailyConnectionRequests >= 2) {
-        return res
-          .status(400)
-          .json({ error: "Daily connection requests limit reached" });
-      }
+//       // Check if the dailyConnectionRequests limit has been reached
+//       if (user.dailyConnectionRequests >= 2) {
+//         return res
+//           .status(400)
+//           .json({ error: "Daily connection requests limit reached" });
+//       }
 
-      if (!user.connectRequest.includes(id)) {
-        user.connectRequest.push(id);
-        // user.request.push(id);
-        user.dailyConnectionRequests += 1;
+//       if (!user.connectRequest.includes(id)) {
+//         user.connectRequest.push(id);
+//         // user.request.push(id);
+//         user.dailyConnectionRequests += 1;
 
-        user.lastConnectionRequestDate = currentDate;
-      }
+//         user.lastConnectionRequestDate = currentDate;
+//       }
 
-      return user.save();
-    })
-    .then(() => {
-      res.json({ message: "Answers saved successfully" });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: "Internal Server Error" });
-    });
-});
+//       return user.save();
+//     })
+//     .then(() => {
+//       res.json({ message: "Answers saved successfully" });
+//     })
+//     .catch((err) => {
+//       console.log(err);
+//       res.status(500).json({ error: "Internal Server Error" });
+//     });
+// });
 
 router.get("/connectionlimit", requireLogin, (req, res) => {
   const userId = req.user._id;
@@ -638,17 +639,16 @@ router.get("/connectionlimit", requireLogin, (req, res) => {
     });
 });
 
-router.put("/request", requireLogin, (req, res) => {
-  const userId = req.user._id;
-  const { id } = req.body;
+router.put("/limit", requireLogin, (req, res) => {
+  const userId = req.user._id
 
-  USER.findById(id)
-  .select("request")
+  USER.findById(userId)
+  .select("dailyConnectionRequests")
   .then((user) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    user.request.push(userId)
+    user.dailyConnectionRequests += 1;
     return user.save();
   })
   .then(() => {
@@ -660,11 +660,134 @@ router.put("/request", requireLogin, (req, res) => {
   });
 })
 
-router.get("/request", requireLogin, (req, res) => {
+// router.put("/request", requireLogin, (req, res) => {
+//   const userId = req.user._id;
+//   const { id } = req.body;
+
+//   USER.findById(id)
+//   .select("request vibes")
+//   .then((user) => {
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+//     user.request.push(userId)
+//     user.vibes += 1;
+//     return user.save();
+//   })
+//   .then(() => {
+//     res.json({ message: "Answers saved successfully" });
+//   })
+//   .catch((err) => {
+//     console.log(err);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   });
+// })
+
+router.put("/request", requireLogin, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id } = req.body;
+
+    // Find the user by ID and update request, vibes, and isNotification
+    const user = await USER.findByIdAndUpdate(
+      id,
+      {
+        $push: { request: userId },
+        $inc: { vibes: 1 },
+        $set: { isNotification: true }, // Set isNotification to true
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ message: "Request, vibes, and isNotification updated successfully" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/request", requireLogin, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await USER.findById(userId).select("request")
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+     // Extract request IDs from the user document
+     const requestIds = user.request;
+
+      // If there are no requests, return an empty array
+    if (!requestIds || requestIds.length === 0) {
+      return res.json([]);
+    }
+
+     // Fetch user details for each request ID
+    const userDetails = await USER.find({ _id: { $in: requestIds } })
+    .select("name photo branch verify year")
+    .exec();
+
+    res.json(userDetails);
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+})
+
+router.put("/removerequest", requireLogin, (req, res) => {
+  const userId = req.user._id;
+  const { id } = req.body;
+
+  USER.findByIdAndUpdate(userId, {
+    $pull: { request: id },
+    $set: { isNotification: false }
+  }, { new: true })
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({ message: "Request removed successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
+});
+
+router.put("/friend", requireLogin, (req, res) => {
+  const userId = req.user._id;
+  const { id } = req.body;
+
+  USER.findById(userId)
+  .select("friend")
+  .then((user) => {
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    user.friend.push(id)
+    return user.save();
+  })
+  .then(() => {
+    res.json({ message: "Answers saved successfully" });
+  })
+  .catch((err) => {
+    console.log(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  });
+})
+
+router.get("/isnotification", requireLogin, (req, res) => {
   const userId = req.user._id;
 
   USER.findById(userId)
-    .select("request")
+    .select("isNotification")
     .then((user) => {
       if (!user) {
         return res.status(404).json({ error: "User not found" });

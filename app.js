@@ -7,8 +7,12 @@ const cors = require("cors")
 
 app.use(cors())
 require("./models/user")
+require("./models/chatModel")
+
 app.use(express.json())
 app.use(require("./routes/auth"))
+app.use(require("./routes/chat"))
+
 mongoose.connect(mongoUrl)
 
 mongoose.connection.on("connected", () => {
@@ -20,7 +24,7 @@ mongoose.connection.on("error", () => {
 })
 
 app.get("/", (req, res) => {
-    res.json("hello word")
+    res.json("hello word this is server")
 })
 
 // app.get("/about", (req, res) => {

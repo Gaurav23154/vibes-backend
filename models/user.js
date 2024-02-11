@@ -53,9 +53,13 @@ const userSchema = new mongoose.Schema({
       },
     ],
   },
-  connectRequest: {
-    type: [ObjectId],
-    default: [], // Default to an empty array
+  // connectRequest: {
+  //   type: [ObjectId],
+  //   default: [], // Default to an empty array
+  // },
+  vibes: {
+    type: Number,
+    default: 0,
   },
   dailyConnectionRequests: {
     type: Number,
@@ -68,6 +72,10 @@ const userSchema = new mongoose.Schema({
   request: {
     type: [ObjectId],
     default: [], // Default to an empty array
+  },
+  isNotification: {
+    type: Boolean,
+    default: false
   },
   friend: {
     type: [ObjectId],
