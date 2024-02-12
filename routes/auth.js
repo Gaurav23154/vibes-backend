@@ -832,7 +832,7 @@ router.get("/top10users-female", async (req, res) => {
     // Fetch all users and sort them based on vibes
     // const allUsers = await USER.find().select("name vibes gender").sort({ vibes: -1 });
     const femaleUsers = await USER.find({ gender: "female", verify: true })
-      .select("name vibes gender branch year")
+      .select("name vibes gender branch year photo verify")
       .sort({ vibes: -1 });
 
     // Get the top 10 users
@@ -850,7 +850,7 @@ router.get("/top10users-male", async (req, res) => {
     // Fetch all users and sort them based on vibes
     // const allUsers = await USER.find().select("name vibes gender").sort({ vibes: -1 });
     const femaleUsers = await USER.find({ gender: "male", verify: true })
-      .select("name verify vibes gender branch year")
+      .select("name verify vibes gender branch year photo")
       .sort({ vibes: -1 });
 
     // Get the top 10 users
