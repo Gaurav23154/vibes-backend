@@ -631,6 +631,19 @@ router.get("/connectionlimit", requireLogin, (req, res) => {
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
+
+      const currentDate = new Date();
+            const lastRequestDate = new Date(user.lastConnectionRequestDate);
+      
+            if (
+              currentDate.getDate() !== lastRequestDate.getDate() ||
+              currentDate.getMonth() !== lastRequestDate.getMonth() ||
+              currentDate.getFullYear() !== lastRequestDate.getFullYear()
+            ) {
+              // If it's a new day, reset the dailyConnectionRequests count
+              user.dailyConnectionRequests = 0;
+            }
+
       res.json(user);
     })
     .catch((err) => {
@@ -798,6 +811,40 @@ router.get("/isnotification", requireLogin, (req, res) => {
       console.error(err);
       return res.status(500).json({ error: "Internal server error" });
     });
+});
+
+
+// Endpoint to get top 10 users based on vibes
+router.get('/top10users-female', async (req, res) => {
+  try {
+    // Fetch all users and sort them based on vibes
+    // const allUsers = await USER.find().select("name vibes gender").sort({ vibes: -1 });
+    const femaleUsers = await USER.find({ gender: 'female' }).select("name vibes gender branch year").sort({ vibes: -1 });
+
+    // Get the top 10 users
+    const top10Users = femaleUsers.slice(0, 10);
+
+    res.json(top10Users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get('/top10users-male', async (req, res) => {
+  try {
+    // Fetch all users and sort them based on vibes
+    // const allUsers = await USER.find().select("name vibes gender").sort({ vibes: -1 });
+    const femaleUsers = await USER.find({ gender: 'male' },{verify: true}).select("name vibes gender branch year").sort({ vibes: -1 });
+
+    // Get the top 10 users
+    const top10Users = femaleUsers.slice(0, 10);
+
+    res.json(top10Users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 module.exports = router;
