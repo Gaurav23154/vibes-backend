@@ -444,9 +444,7 @@ router.get("/match", requireLogin, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const currentUser = await USER.findById(userId).select(
-      "gender answers"
-    );
+    const currentUser = await USER.findById(userId).select("gender answers");
 
     if (
       !currentUser ||
@@ -458,7 +456,9 @@ router.get("/match", requireLogin, async (req, res) => {
         .json({ error: "User not found or no answers available" });
     }
 
-    const allUsers = await USER.find().select("_id gender answers request friend");
+    const allUsers = await USER.find().select(
+      "_id gender answers request friend"
+    );
 
     const matchingResults = [];
 
@@ -626,25 +626,33 @@ router.get("/connectionlimit", requireLogin, (req, res) => {
   const userId = req.user._id;
 
   USER.findById(userId)
-    .select("dailyConnectionRequests")
+    .select("dailyConnectionRequests lastConnectionRequestDate")
     .then((user) => {
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
       const currentDate = new Date();
-            const lastRequestDate = new Date(user.lastConnectionRequestDate);
-      
-            if (
-              currentDate.getDate() !== lastRequestDate.getDate() ||
-              currentDate.getMonth() !== lastRequestDate.getMonth() ||
-              currentDate.getFullYear() !== lastRequestDate.getFullYear()
-            ) {
-              // If it's a new day, reset the dailyConnectionRequests count
-              user.dailyConnectionRequests = 0;
-            }
+      const lastRequestDate = new Date(user.lastConnectionRequestDate);
 
-      res.json(user);
+      if (
+        currentDate.getDate() !== lastRequestDate.getDate() ||
+        currentDate.getMonth() !== lastRequestDate.getMonth() ||
+        currentDate.getFullYear() !== lastRequestDate.getFullYear()
+      ) {
+        // If it's a new day, reset the dailyConnectionRequests count
+        user.dailyConnectionRequests = 0;
+        user.lastConnectionRequestDate = currentDate; // Update last connection request date
+      }
+
+      return user.save();
+    })
+    .then((updatedUser) => {
+      // Send the updated user information in the response
+      res.json({
+        dailyConnectionRequests: updatedUser.dailyConnectionRequests,
+        // lastConnectionRequestDate: updatedUser.lastConnectionRequestDate,
+      });
     })
     .catch((err) => {
       console.error(err);
@@ -653,25 +661,25 @@ router.get("/connectionlimit", requireLogin, (req, res) => {
 });
 
 router.put("/limit", requireLogin, (req, res) => {
-  const userId = req.user._id
+  const userId = req.user._id;
 
   USER.findById(userId)
-  .select("dailyConnectionRequests")
-  .then((user) => {
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    user.dailyConnectionRequests += 1;
-    return user.save();
-  })
-  .then(() => {
-    res.json({ message: "Answers saved successfully" });
-  })
-  .catch((err) => {
-    console.log(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  });
-})
+    .select("dailyConnectionRequests")
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      user.dailyConnectionRequests += 1;
+      return user.save();
+    })
+    .then(() => {
+      res.json({ message: "Answers saved successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
+});
 
 // router.put("/request", requireLogin, (req, res) => {
 //   const userId = req.user._id;
@@ -716,7 +724,9 @@ router.put("/request", requireLogin, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ message: "Request, vibes, and isNotification updated successfully" });
+    res.json({
+      message: "Request, vibes, and isNotification updated successfully",
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -727,41 +737,44 @@ router.get("/request", requireLogin, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const user = await USER.findById(userId).select("request")
+    const user = await USER.findById(userId).select("request");
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-     // Extract request IDs from the user document
-     const requestIds = user.request;
+    // Extract request IDs from the user document
+    const requestIds = user.request;
 
-      // If there are no requests, return an empty array
+    // If there are no requests, return an empty array
     if (!requestIds || requestIds.length === 0) {
       return res.json([]);
     }
 
-     // Fetch user details for each request ID
+    // Fetch user details for each request ID
     const userDetails = await USER.find({ _id: { $in: requestIds } })
-    .select("name photo branch verify year")
-    .exec();
+      .select("name photo branch verify year")
+      .exec();
 
     res.json(userDetails);
-
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal server error" });
   }
-})
+});
 
 router.put("/removerequest", requireLogin, (req, res) => {
   const userId = req.user._id;
   const { id } = req.body;
 
-  USER.findByIdAndUpdate(userId, {
-    $pull: { request: id },
-    $set: { isNotification: false }
-  }, { new: true })
+  USER.findByIdAndUpdate(
+    userId,
+    {
+      $pull: { request: id },
+      $set: { isNotification: false },
+    },
+    { new: true }
+  )
     .then((user) => {
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -779,22 +792,22 @@ router.put("/friend", requireLogin, (req, res) => {
   const { id } = req.body;
 
   USER.findById(userId)
-  .select("friend")
-  .then((user) => {
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    user.friend.push(id)
-    return user.save();
-  })
-  .then(() => {
-    res.json({ message: "Answers saved successfully" });
-  })
-  .catch((err) => {
-    console.log(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  });
-})
+    .select("friend")
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      user.friend.push(id);
+      return user.save();
+    })
+    .then(() => {
+      res.json({ message: "Answers saved successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
+});
 
 router.get("/isnotification", requireLogin, (req, res) => {
   const userId = req.user._id;
@@ -813,13 +826,14 @@ router.get("/isnotification", requireLogin, (req, res) => {
     });
 });
 
-
 // Endpoint to get top 10 users based on vibes
-router.get('/top10users-female', async (req, res) => {
+router.get("/top10users-female", async (req, res) => {
   try {
     // Fetch all users and sort them based on vibes
     // const allUsers = await USER.find().select("name vibes gender").sort({ vibes: -1 });
-    const femaleUsers = await USER.find({ gender: 'female' }).select("name vibes gender branch year").sort({ vibes: -1 });
+    const femaleUsers = await USER.find({ gender: "female", verify: true })
+      .select("name vibes gender branch year")
+      .sort({ vibes: -1 });
 
     // Get the top 10 users
     const top10Users = femaleUsers.slice(0, 10);
@@ -831,11 +845,13 @@ router.get('/top10users-female', async (req, res) => {
   }
 });
 
-router.get('/top10users-male', async (req, res) => {
+router.get("/top10users-male", async (req, res) => {
   try {
     // Fetch all users and sort them based on vibes
     // const allUsers = await USER.find().select("name vibes gender").sort({ vibes: -1 });
-    const femaleUsers = await USER.find({ gender: 'male' },{verify: true}).select("name vibes gender branch year").sort({ vibes: -1 });
+    const femaleUsers = await USER.find({ gender: "male", verify: true })
+      .select("name verify vibes gender branch year")
+      .sort({ vibes: -1 });
 
     // Get the top 10 users
     const top10Users = femaleUsers.slice(0, 10);
