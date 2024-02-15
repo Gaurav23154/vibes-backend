@@ -42,8 +42,8 @@ const server = app.listen(PORT, () => {
 const io = require("socket.io")(server, {
     pingTimeout: 300000,
     cors: {
-    //   origin: "https://booktrade.onrender.com",
-      origin: "http://localhost:3000",
+      origin: "https://vibes-incampus.onrender.com",
+    //   origin: "http://localhost:3000",
     },
   });
   
