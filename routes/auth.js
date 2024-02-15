@@ -863,4 +863,23 @@ router.get("/top10users-male", async (req, res) => {
   }
 });
 
+
+router.get("/top-female", async (req, res) => {
+  try {
+    // Fetch all users and sort them based on vibes
+    // const allUsers = await USER.find().select("name vibes gender").sort({ vibes: -1 });
+    const femaleUsers = await USER.find({ gender: "female" })
+      .select("name vibes gender branch year photo verify")
+      .sort({ vibes: -1 });
+
+    // Get the top 10 users
+    const top10Users = femaleUsers.slice(0, 10);
+
+    res.json(top10Users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 module.exports = router;
