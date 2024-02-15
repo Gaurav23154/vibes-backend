@@ -83,8 +83,11 @@ const userSchema = new mongoose.Schema({
   },
   isOnline:{
     type: Boolean,
+    default: false
   }
 
 });
 
-mongoose.model("USER", userSchema);
+const USER = mongoose.model("USER", userSchema);
+
+module.exports = USER;

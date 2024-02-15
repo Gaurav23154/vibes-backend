@@ -11,6 +11,7 @@ const chatSchema = new mongoose.Schema(
     ],
     latestMessage: {
       type: ObjectId,
+      ref: "MESSAGE"
     },
   },
   {

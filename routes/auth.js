@@ -82,6 +82,11 @@ router.post("/login", (req, res) => {
   });
 });
 
+router.get("/loginuser", requireLogin, (req, res) => {
+  const userId = req.user._id.toString();
+  res.send(userId);
+});
+
 router.post("/uploadphoto", requireLogin, (req, res) => {
   const { photo } = req.body;
   const userId = req.user._id;
