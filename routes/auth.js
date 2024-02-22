@@ -896,7 +896,7 @@ router.get("/top-male", async (req, res) => {
       .sort({ vibes: -1 });
 
     // Get the top 10 users
-    const top10Users = femaleUsers.slice(0, 30);
+    const top10Users = femaleUsers.slice(0, 50);
 
     res.json(top10Users);
   } catch (error) {
